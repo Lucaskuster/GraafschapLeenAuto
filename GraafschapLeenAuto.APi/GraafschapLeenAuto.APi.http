@@ -1,0 +1,6 @@
+@GraafschapLeenAuto.APi_HostAddress = http://localhost:5236
+
+GET {{GraafschapLeenAuto.APi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
