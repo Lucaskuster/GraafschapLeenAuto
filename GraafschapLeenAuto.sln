@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraafschapLeenAuto.APi", "src\GraafschapLeenAuto.APi\GraafschapLeenAuto.APi.csproj", "{88BD6C3D-8149-4953-A18C-008B03A6CEDF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraafschapLeenAuto.Api", "src\GraafschapLeenAuto.APi\GraafschapLeenAuto.Api.csproj", "{88BD6C3D-8149-4953-A18C-008B03A6CEDF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{76732448-0009-4D49-AC78-E1D42C8D5AE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraafschapLeenAuto.Shared", "src\GraafschapLeenAuto.Shared\GraafschapLeenAuto.Shared.csproj", "{C4F1F84B-8121-4DB1-A537-76A3E1802AF3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,12 +19,17 @@ Global
 		{88BD6C3D-8149-4953-A18C-008B03A6CEDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88BD6C3D-8149-4953-A18C-008B03A6CEDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88BD6C3D-8149-4953-A18C-008B03A6CEDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4F1F84B-8121-4DB1-A537-76A3E1802AF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4F1F84B-8121-4DB1-A537-76A3E1802AF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4F1F84B-8121-4DB1-A537-76A3E1802AF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4F1F84B-8121-4DB1-A537-76A3E1802AF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{88BD6C3D-8149-4953-A18C-008B03A6CEDF} = {76732448-0009-4D49-AC78-E1D42C8D5AE6}
+		{C4F1F84B-8121-4DB1-A537-76A3E1802AF3} = {76732448-0009-4D49-AC78-E1D42C8D5AE6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D8BB1B77-A286-4365-AD36-E0FCF78CFEF8}
