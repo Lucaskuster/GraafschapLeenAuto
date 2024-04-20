@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraafschapLeenAuto.APi", "GraafschapLeenAuto.APi\GraafschapLeenAuto.APi.csproj", "{88BD6C3D-8149-4953-A18C-008B03A6CEDF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraafschapLeenAuto.APi", "src\GraafschapLeenAuto.APi\GraafschapLeenAuto.APi.csproj", "{88BD6C3D-8149-4953-A18C-008B03A6CEDF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{76732448-0009-4D49-AC78-E1D42C8D5AE6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +20,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{88BD6C3D-8149-4953-A18C-008B03A6CEDF} = {76732448-0009-4D49-AC78-E1D42C8D5AE6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D8BB1B77-A286-4365-AD36-E0FCF78CFEF8}
