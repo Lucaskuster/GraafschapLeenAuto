@@ -1,4 +1,5 @@
-using GraafschapLeenAuto.Shared;
+using GraafschapLeenAuto.Api.Entities;
+using GraafschapLeenAuto.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GraafschapLeenAuto.APi.Controllers
@@ -7,48 +8,38 @@ namespace GraafschapLeenAuto.APi.Controllers
     [Route("[controller]")]
     public class UserController : ControllerBase
     {
-        public static List<User> Users = new List<User>
-        {
-            new User
-            {
-                Name = "Name",
-                Email = "Mail",
-                Password = "Secret password"
-            }
-        };
+        private readonly UserService userService;
 
-        private readonly ILogger<UserController> _logger;
-
-        public UserController(ILogger<UserController> logger)
+        public UserController(UserService userService)
         {
-            _logger = logger;
+            this.userService = userService;
         }
 
-        [HttpGet(Name = "Users")]
-        public IActionResult Get()
+        [HttpGet]
+        public IActionResult GetUsers()
         {
-            var usersDtos = Users.Select(user => new UserDto
-            {
-                Name = user.Name,
-                Email = user.Email
-            });
+            var users = userService.GetUsers();
+            return Ok(users);
+        }
 
-            return Ok(usersDtos);
+        [HttpGet("{id}")]
+        public IActionResult GetUser(int id)
+        {
+            return Ok();
         }
 
         [HttpPost]
-        public IActionResult Post([FromBody] User user)
+        public IActionResult CreateUser([FromBody] User user)
         {
-            Users.Add(user);
+            var createdUser = userService.CreateUser(user);
+
+            return Ok(createdUser); 
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult UpdateUser(int id, [FromBody] User user)
+        {
             return Ok();
         }
     }
-}
-
-
-public class User
-{
-    public string Name { get; set; }
-    public string Email { get; set; }
-    public string Password { get; set; }
 }
