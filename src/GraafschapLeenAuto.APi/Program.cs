@@ -1,4 +1,7 @@
 
+using GraafschapLeenAuto.Api.Context;
+using Microsoft.EntityFrameworkCore;
+
 namespace GraafschapLeenAuto.APi
 {
     public class Program
@@ -13,6 +16,11 @@ namespace GraafschapLeenAuto.APi
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddDbContext<LeenAutoDbContext>(options =>
+            {
+                options.UseSqlite(builder.Configuration.GetConnectionString("LeenAutoDbContext"));
+            });
 
             var app = builder.Build();
 

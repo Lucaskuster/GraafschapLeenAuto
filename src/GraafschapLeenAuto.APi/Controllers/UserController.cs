@@ -1,3 +1,4 @@
+using GraafschapLeenAuto.Api.Entities;
 using GraafschapLeenAuto.Shared;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,12 +44,4 @@ namespace GraafschapLeenAuto.APi.Controllers
             return Ok();
         }
     }
-}
-
-
-public class User
-{
-    public string Name { get; set; }
-    public string Email { get; set; }
-    public string Password { get; set; }
 }
