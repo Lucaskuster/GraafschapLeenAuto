@@ -19,7 +19,7 @@ namespace GraafschapLeenAuto.APi
 
             builder.Services.AddDbContext<LeenAutoDbContext>(options =>
             {
-                options.UseSqlite(builder.Configuration.GetConnectionString("LeenAutoDbContext"));
+                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
             var app = builder.Build();

@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GraafschapLeenAuto.Api.Migrations
 {
     [DbContext(typeof(LeenAutoDbContext))]
-    [Migration("20240424090632_InnitialCreate")]
+    [Migration("20240424094540_InnitialCreate")]
     partial class InnitialCreate
     {
         /// <inheritdoc />
