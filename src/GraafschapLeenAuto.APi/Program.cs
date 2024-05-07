@@ -1,51 +1,95 @@
+namespace GraafschapLeenAuto.APi;
 
 using GraafschapLeenAuto.Api.Context;
 using GraafschapLeenAuto.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
-namespace GraafschapLeenAuto.APi
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+        var services = builder.Services;
+
+        // Add services to the container.
+
+        services.AddControllers();
+        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen(options =>
         {
-            var builder = WebApplication.CreateBuilder(args);
-            var services = builder.Services;
-
-            // Add services to the container.
-
-            services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
-
-            // Add services
-            services.AddTransient<UserService>();
-
-            // Add database context
-            services.AddDbContext<LeenAutoDbContext>(options =>
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
             {
-                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+                In = ParameterLocation.Header,
+                Description = "Please insert JWT with Bearer into field",
+                Name = "Authorization",
+                Type = SecuritySchemeType.ApiKey
             });
 
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement()
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
 
-            app.UseHttpsRedirection();
+        // Add services
+        services.AddTransient<UserService>();
+        services.AddTransient<AuthService>();
+        services.AddTransient<TokenService>();
 
-            app.UseAuthorization();
+        // Add database context
+        services.AddDbContext<LeenAutoDbContext>(options =>
+        {
+            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+        });
 
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+           .AddJwtBearer(options =>
+           {
+               options.TokenValidationParameters = new TokenValidationParameters
+               {
+                   ValidateIssuer = true,
+                   ValidateAudience = true,
+                   ValidateLifetime = true,
+                   ValidateIssuerSigningKey = true,
+                   ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                   ValidAudience = builder.Configuration["Jwt:Audience"],
+                   IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                   ClockSkew = TimeSpan.Zero
+               };
+           });
 
-            app.MapControllers();
+        var app = builder.Build();
 
-            app.Run();
+        // Configure the HTTP request pipeline.
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
+
+        app.UseHttpsRedirection();
+
+        app.UseAuthorization();
+
+
+        app.MapControllers();
+
+        app.Run();
     }
 }

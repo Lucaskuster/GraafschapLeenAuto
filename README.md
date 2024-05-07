@@ -1,235 +1,154 @@
 # GraafschapLeenAuto
 
-## Toevoegen EF voor sqlite
-- Package manager console 
-- Let op juiste project '.api'
-- Run het volgende command ```Install-Package Microsoft.EntityFrameworkCore.Sqlite```
-    - Kan ook via Tools -> Nuget for solution en dan zoeken op Microsoft.EntityFrameworkCore
-    - Hier zie je ook dat er andere database providers zijn
-        - zoals SQL server
-        - Wij gaan gebruik maken van sqlite 
+## Authenticatie en autorisatie
+- In deze les gaan we het hebben over authenticatie.
+- In de volgende les gaan we het hebben over autorisatie.
+- Authenticatie is het proces waarbij je controleert of iemand is wie hij zegt dat hij is.
+- Autorisatie is het proces waarbij je controleert of iemand toegang heeft tot bepaalde resources.
 
-## Aanmaken Model en dbcontext
-``` c#
- public class LeenAutoDbContext : DbContext
- {
-    public DbSet<User> Users { get; set; }
+## Toevoegen AuthController en AuthService
+- We maken een AuthController aan die de gebruiker kan inloggen en een token teruggeeft.
+- Deze class krijgt het Allow Anonymous attribuut zodat iedereen erbij kan. 
+  - ```[AllowAnonymous]```
+- In deze class wordt de AuthService geïnjecteerd. (Dus zet dit ook in de program file)
+  - ```services.AddTransient<AuthService>();```
+- De AuthService heeft een Login methode die een token teruggeeft.
+  - Eerst wordt gekeken of de gebruiker bestaat en of het wachtwoord klopt.
+  - Als dat zo is wordt er een token gemaakt en teruggegeven.
+  - Als dat niet zo is wordt er null teruggegeven.
+- De AuthController login weet bij null dat er iets niet klopt en geeft dan een 401 terug.
+  - ```return Unauthorized();```
+- In de AuthService wordt de token gemaakt met de TokenService.
 
-    public LeenAutoDbContext(DbContextOptions<LeenAutoDbContext> options)
-         : base(options)
-     {
-     }
+### LoginRequest and AuthResponse
+- We maken een LoginRequest class aan die de inlog gegevens van de gebruiker bevat.
+- We maken een AuthResponse class aan die de token bevat.
+``` csharp 
+[Required]
+[EmailAddress]
+public string Email { get; set; }
 
- }
+[Required]
+public string Password { get; set; }
 ```
-- Uiteraard eerst map aanmaken waar de database context komt te staan
-- Dan maken we een class met die de dbContext van EFcore erft
-- Maak de constructor
-- En voeg je Entiteiten toe aan de database set.
+- De LoginRequest heeft een Email en een Password.
+- De Email is verplicht en moet een email zijn
 
-
-
-## Toevoegen aan Program 
-``` c#
- // Add database context
- services.AddDbContext<LeenAutoDbContext>(options =>
- {
-     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
- });
-```
-- Omdat ik telkens hetzelfde moet typen zet ik builder.Services in een services variable
-- We gaan een service toevoegen die de db context toevoegd aan de applicatie
-    - Als optie geven we aan dat we een sqlite database gaan gebruiken en we voegen vast de plek toe waar de connectie string komt te staan. (in de configuratie)
-- Voeg de connectie string toe aan de appsettings
-``` json
-"ConnectionStrings": {
-  "DefaultConnection": "Data Source=leenauto.db;"
-}
-```
-
-## Migrations
-- Om de database te vullen maken we migraties aan deze kunnen we aanmaken met een andere package van Microsoft.EntityFrameWorkCore, namelijke de tools package. Met deze Package kun je migraties beheren en de database updaten 
-``` Install-Package Microsoft.EntityFrameworkCore.Tools```
-- Dan kunnen we meteen een migratie aan maken om de User eniteit op de database te plaatsen.
-```Add Migration InitialCreate```
-
-- Dit gaat fout, kan iemand vertellen waarom?
-- We hebben de user entiteit nog niet behandeld als database entiteit.
-- Eerst gaan we voor nieuwe entiteiten een folder maken.
-- Voeg hieraan de User entiteit toe.
-- Stel de primary key in en we kunnen aangeven dat de andere velden verplicht zijn
-- We willen meerdere namen kunnen toevoegen, dus gebruiken we een Id als PK
-``` c#
-public class User
+## Toevoegen TokenService
+- De TokenService maakt een token aan met de gegeven claims.
+``` csharp
+var claims = new List<Claim>
 {
-    [Key]
-    public int Id { get; set; }
-
-    [Required]
-    public string Name { get; set; }
-
-    [Required]
-    public string Email { get; set; }
-
-    [Required]
-    public string Password { get; set; }
-}
+    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+    new Claim(ClaimTypes.Name, user.Name),
+    new Claim(ClaimTypes.Email, user.Email),
+};
 ```
-- zet de import van de User goed in de andere projecten.
-- Probeer opnieuw de migratie aan te maken. 
-- Zie dat er een nieuwe map is met Migraties.
-    - Gegenereerd, een hoop werk
-    - Je kunt dus nu code blijven schrijven en je hoeft de database niet te editen
-- Als de Migratie zo ver is kun je de database updaten zodat deze migratie er op staat
-``` Update-Database```
-- Mooi de database met een tabel staat!
-
-## Gebruik maken van de database
-- Maak een service laag om het niet alles in je controllers te doen.
-- Maak een UserService aan om met je db te communiceren.
-- Schoon je Controller op.
-- Maak endpoints voor Users
-``` c# 
- public UserController()
- {
- }
-
- [HttpGet]
- public IActionResult GetUsers()
- {
-    
-     return Ok();
- }
-
- [HttpGet("{id}")]
- public IActionResult GetUser(int id)
- {
-     return Ok();
- }
-
- [HttpPost]
- public IActionResult CreateUser([FromBody] User user)
- {
-     return Ok();
- }
-
- [HttpPut("{id}")]
- public IActionResult UpdateUser(int id, [FromBody] User user)
- {
-     return Ok();
- }
+- De claims zijn de naam van de gebruiker en de rol van de gebruiker.
+- ClaimTypes zijn standaard claims die je kunt gebruiken.
+    - Het voordeel van deze standaard claims is dat je ze kunt gebruiken in de Authorize attributen en ze worden automatisch herkend.
+- De token wordt ondertekend met de HmacSha256Signature en de key die in de appsettings.json staat.
+      - Dit wordt gedaan om te voorkomen dat de key aangepast kan worden / gelezen kan worden door iemand anders.
+``` csharp
+var singingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 ```
+- De key is geheim en moet langer zijn dan 256 bits.
+- Door de key weet de gebruiker dat de token echt is en niet aangepast is.
+- De token wordt gemaakt met de JwtSecurityToken class.
+``` csharp
+ var token = new JwtSecurityToken(
+            issuer: configuration["Jwt:Issuer"],
+            audience: configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.Now.AddDays(7),
+            signingCredentials: singingCredentials
+        );
+```
+- De token heeft een issuer, audience, claims, expires en signingCredentials.
+- De issuer is de persoon die de token uitgeeft.
+- De audience is de persoon die de token mag gebruiken.
+- De claims zijn de gegevens die in de token staan.
+- De expires is de tijd dat de token geldig is.
+- De signingCredentials is de manier waarop de token ondertekend is.
 
-- Dan gaan we voor deze endpoints database calls maken in de UserService
-- Daarvoor hebben we de DbContext weer nodig, dus die halen we op.
-``` c#
-private readonly LeenAutoDbContext dbContext;
+### Jwt
+- JWT staat voor JSON Web Token.
+- Het is een specifiek type bearer token.
 
-public UserService(LeenAutoDbContext dbContext)
+ ## Program 
+
+ ### AddSwaggerGen
+ ``` c# 
+ options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
 {
-    this.dbContext = dbContext;
-}
-```
-- Omdat we nu ook met Id's werken is het handig om deze toe te voegen aan de dto
-- Maak de verschillende service handelingen voor de endpoints
+    In = ParameterLocation.Header,
+    Description = "Please insert JWT with Bearer into field",
+    Name = "Authorization",
+    Type = SecuritySchemeType.ApiKey
+});
+ ```
+- Hiermee voeg je een security definition toe aan de swagger ui.
+- De naam van de security definition is Bearer.
+- Bearer token is een token die je gebruikt om te authenticeren en is vrij gemakklijk te gebruiken vergeleken met andere tokens.
+
+- AddSecurtityRequirement
 ``` c#
- public class UserService
- {
-     private readonly LeenAutoDbContext dbContext;
-
-     public UserService(LeenAutoDbContext dbContext)
-     {
-         this.dbContext = dbContext;
-     }
-
-     public IEnumerable<UserDto> GetUsers()
-     {
-         return dbContext.Users.Select(x => new UserDto
-         {
-             Id = x.Id,
-             Name = x.Name,
-             Email = x.Email
-         });
-     }
-
-     public UserDto? GetUserById(int id)
-     {
-         var user = dbContext.Users.Find(id);
-
-         if (user == null)
-         {
-             return null;
-         }
-
-         return new UserDto
-         {
-             Id = user.Id,
-             Name = user.Name,
-             Email = user.Email
-         };
-     }
-
-     public UserDto CreateUser(User user)
-     {
-         dbContext.Users.Add(user);
-         dbContext.SaveChanges();
-
-         return new UserDto
-         {
-             Id = user.Id,
-             Name = user.Name,
-             Email = user.Email
-         };
-     }
-
-     public UserDto? UpdateUser(int id, User user)
-     {
-         throw new NotImplementedException();
-     }
- }
-```
-
-- In de controller voegen we de UserService toe.
-``` c# 
-private readonly UserService userService;
-
-public UserController(UserService userService)
+options.AddSecurityRequirement(new OpenApiSecurityRequirement()
 {
-    this.userService = userService;
-}
+    {
+        new OpenApiSecurityScheme
+        {
+            Reference = new OpenApiReference
+            {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        Array.Empty<string>()
+    }
+});
 ```
-- Implement GetUsers and CreateUsers
+- Hiermee voeg je een security requirement toe aan de swagger ui.
+- Dit betekent dat je een token nodig hebt om de swagger ui te gebruiken. 
 
-## Dependancy injection
-- Dan kunnen we proberen een User toe toegen, alleen krijgen we een error. Weet iemand waarom?
-- We hebben hem nog niet geïnjecteerd. 
-    - Dit doen we in de Program file.
-    ```c# 
-     // Add services
-    services.AddTransient<UserService>();
-    ``
-- Probeer het nu opnieuw en het werkt.
-
-Dependency injection zorgt voor losgekoppeld code wat je dan kan laten zien door niet de heletijd new new new new te doen.
-```c# 
- this.userService = new UserService();
+### AddAuthentication
+``` c#
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
 ```
+- Hiermee voeg je authenticatie toe aan de applicatie. 
+- De JwtBearerDefaults.AuthenticationScheme is de standaard authenticatie methode.
+- De TokenValidationParameters zijn de parameters die de token moet hebben om geldig te zijn.
+- Deze komen als het goed is bekend voor van de TokenService.
+
+
+
+ ## Migration admin user
+ Ik wilde nog een admin user toevoegen, maar ik had al een migratie gemaakt. 
+ - Database Updaten zodat de migratie er niet meer op staat
+    - ```Update-Database 0```
+ - Pas de Migratie aan en voeg de admin user toe
+    ``` migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "Id", "Name", "Email", "Password" },
+                values: new object[] { 1, "Admin", "admin@mail.com", "adminpassword" });
+    ```
+ - Voeg de migratie weer toe ``` Update-Database```
+
  
-Daarnaast heb je dan de verschillende scopes voor een dependency ookwel dependency lifetimes:
- 
-Transient: Wordt altijd opnieuw aangemaakt kun je zien als, new();
 
-Scoped: Per scope per request. Denk aan dbcontext die is scoped zodat we in meerdere classen dezelfde context kunnen gebruiken waardoor bijv de savechanges werkt als een unit of work.
-
-Singleton: blijft de hele levensduur van de applicatie bestaan. En is voor iedereen hetzelfde vanaf het moment dat die geregistreerd is. Je zou daar bijv logging kunnen gebruiken, moet overal beschikbaar zijn en doet eigenlijk altijd hetzelfde.
-
-
-# Afsluiten
-In principe kun je nu alles al maken met uitzondering van de webapplicatie/ windows forms applicatie en authenticatie en authorisatie maar dat heb je in dit stadium nog niet nodig. Doormiddel van swagger kun je nu de gehele werking in de backend al programmeren zonder daar een interface aan te hangen.
-
-
-
-
-## TODO
-Code first
-
+ ## denk aan
+ ZET bearer voor de token in de swagger ui

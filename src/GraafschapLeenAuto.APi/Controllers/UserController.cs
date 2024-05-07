@@ -1,45 +1,46 @@
 using GraafschapLeenAuto.Api.Entities;
 using GraafschapLeenAuto.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GraafschapLeenAuto.APi.Controllers
+namespace GraafschapLeenAuto.APi.Controllers;
+
+[Authorize]
+[ApiController]
+[Route("[controller]")]
+public class UserController : ControllerBase
 {
-    [ApiController]
-    [Route("[controller]")]
-    public class UserController : ControllerBase
+    private readonly UserService userService;
+
+    public UserController(UserService userService)
     {
-        private readonly UserService userService;
+        this.userService = userService;
+    }
 
-        public UserController(UserService userService)
-        {
-            this.userService = userService;
-        }
+    [HttpGet]
+    public IActionResult GetUsers()
+    {
+        var users = userService.GetUsers();
+        return Ok(users);
+    }
 
-        [HttpGet]
-        public IActionResult GetUsers()
-        {
-            var users = userService.GetUsers();
-            return Ok(users);
-        }
+    [HttpGet("{id}")]
+    public IActionResult GetUser(int id)
+    {
+        return Ok();
+    }
 
-        [HttpGet("{id}")]
-        public IActionResult GetUser(int id)
-        {
-            return Ok();
-        }
+    [HttpPost]
+    public IActionResult CreateUser([FromBody] User user)
+    {
+        var createdUser = userService.CreateUser(user);
 
-        [HttpPost]
-        public IActionResult CreateUser([FromBody] User user)
-        {
-            var createdUser = userService.CreateUser(user);
+        return Ok(createdUser); 
+    }
 
-            return Ok(createdUser); 
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult UpdateUser(int id, [FromBody] User user)
-        {
-            return Ok();
-        }
+    [HttpPut("{id}")]
+    public IActionResult UpdateUser(int id, [FromBody] User user)
+    {
+        return Ok();
     }
 }
