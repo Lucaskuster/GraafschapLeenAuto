@@ -8,14 +8,9 @@ namespace GraafschapLeenAuto.APi.Controllers;
 [Authorize]
 [ApiController]
 [Route("[controller]")]
-public class UserController : ControllerBase
+public class UserController(UserService userService) : ControllerBase
 {
-    private readonly UserService userService;
-
-    public UserController(UserService userService)
-    {
-        this.userService = userService;
-    }
+    private readonly UserService userService = userService;
 
     [HttpGet]
     public IActionResult GetUsers()

@@ -23,11 +23,11 @@ public class TokenService(IConfiguration configuration)
         var singingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
         var token = new JwtSecurityToken(
-            issuer: configuration["Jwt:Issuer"],
-            audience: configuration["Jwt:Audience"],
             claims: claims,
             expires: DateTime.Now.AddDays(7),
-            signingCredentials: singingCredentials
+            signingCredentials: singingCredentials,
+            issuer: configuration["Jwt:Issuer"],
+            audience: configuration["Jwt:Audience"]
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
