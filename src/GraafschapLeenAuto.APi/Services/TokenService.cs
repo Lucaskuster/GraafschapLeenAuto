@@ -15,9 +15,9 @@ public class TokenService(IConfiguration configuration)
 
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("id", user.Id.ToString()),
+            new Claim("name", user.Name),
+            new Claim(nameof(User.Email).ToLower(), user.Email),
         };
 
         var singingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
