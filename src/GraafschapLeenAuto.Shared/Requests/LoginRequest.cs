@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace GraafschapLeenAuto.Shared;
+namespace GraafschapLeenAuto.Shared.Requests;
 
 public class LoginRequest
 {

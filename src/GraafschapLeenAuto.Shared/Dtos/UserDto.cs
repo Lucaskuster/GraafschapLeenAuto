@@ -1,4 +1,4 @@
-﻿namespace GraafschapLeenAuto.Shared
+﻿namespace GraafschapLeenAuto.Shared.Dtos
 {
     public class UserDto
     {

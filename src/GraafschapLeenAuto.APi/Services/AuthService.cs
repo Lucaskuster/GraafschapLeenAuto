@@ -1,5 +1,6 @@
 ﻿using GraafschapLeenAuto.Api.Context;
-using GraafschapLeenAuto.Shared;
+using GraafschapLeenAuto.Shared.Requests;
+using GraafschapLeenAuto.Shared.Responses;
 
 namespace GraafschapLeenAuto.Api.Services;
 

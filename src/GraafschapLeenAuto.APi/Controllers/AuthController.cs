@@ -1,15 +1,17 @@
 ﻿using GraafschapLeenAuto.Api.Services;
-using GraafschapLeenAuto.Shared;
+using GraafschapLeenAuto.Shared.Enums;
+using GraafschapLeenAuto.Shared.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GraafschapLeenAuto.Api.Controllers;
 
-[AllowAnonymous]
-[Controller]
+
+[ApiController]
 [Route("[controller]")]
 public class AuthController(AuthService authService) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpPost]
     public IActionResult Login([FromBody] LoginRequest request)
     {
@@ -21,5 +23,13 @@ public class AuthController(AuthService authService) : ControllerBase
         }
 
         return Ok(response);
+    }
+
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("secret")]
+    public IActionResult Secret()
+    {
+        return Ok("secret");
     }
 }

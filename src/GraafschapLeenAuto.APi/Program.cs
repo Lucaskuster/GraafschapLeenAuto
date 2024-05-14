@@ -58,7 +58,7 @@ public class Program
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
         });
 
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
            .AddJwtBearer(options =>
            {
                options.TokenValidationParameters = new TokenValidationParameters
@@ -74,19 +74,27 @@ public class Program
                };
            });
 
+        services.AddAuthorizationBuilder()
+           .SetFallbackPolicy(new AuthorizationPolicyBuilder()
+           .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+           .RequireAuthenticatedUser()
+           .Build());
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
+
             app.UseSwaggerUI();
         }
 
         app.UseHttpsRedirection();
 
-        app.UseAuthorization();
+        app.UseAuthentication();
 
+        app.UseAuthorization();
 
         app.MapControllers();
 

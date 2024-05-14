@@ -15,5 +15,7 @@ namespace GraafschapLeenAuto.Api.Entities
 
         [Required]
         public string Password { get; set; }
+
+        public virtual List<Role> Roles { get; set; } = new List<Role>();
     }
 }

@@ -1,154 +1,297 @@
 # GraafschapLeenAuto
 
 ## Authenticatie en autorisatie
-- In deze les gaan we het hebben over authenticatie.
-- In de volgende les gaan we het hebben over autorisatie.
-- Authenticatie is het proces waarbij je controleert of iemand is wie hij zegt dat hij is.
+- In deze les gaan we het hebben over authorisatie.
 - Autorisatie is het proces waarbij je controleert of iemand toegang heeft tot bepaalde resources.
-
-## Toevoegen AuthController en AuthService
-- We maken een AuthController aan die de gebruiker kan inloggen en een token teruggeeft.
-- Deze class krijgt het Allow Anonymous attribuut zodat iedereen erbij kan. 
-  - ```[AllowAnonymous]```
-- In deze class wordt de AuthService geïnjecteerd. (Dus zet dit ook in de program file)
-  - ```services.AddTransient<AuthService>();```
-- De AuthService heeft een Login methode die een token teruggeeft.
-  - Eerst wordt gekeken of de gebruiker bestaat en of het wachtwoord klopt.
-  - Als dat zo is wordt er een token gemaakt en teruggegeven.
-  - Als dat niet zo is wordt er null teruggegeven.
-- De AuthController login weet bij null dat er iets niet klopt en geeft dan een 401 terug.
-  - ```return Unauthorized();```
-- In de AuthService wordt de token gemaakt met de TokenService.
-
-### LoginRequest and AuthResponse
-- We maken een LoginRequest class aan die de inlog gegevens van de gebruiker bevat.
-- We maken een AuthResponse class aan die de token bevat.
+- In de vorige les hebben we gekeken naar authenticatie.
+- Authenticatie is het proces waarbij je controleert of iemand is wie hij zegt dat hij is.
+ 
+## Migratie fout vorige les
+- In de vorige les hebben we een fout gemaakt bij het toevoegen van de migratie.
+- In de migratie hebben we gelijk aangemaakt en met de migrationBuilder de data toegevoegd.
 ``` csharp 
-[Required]
-[EmailAddress]
-public string Email { get; set; }
-
-[Required]
-public string Password { get; set; }
+migrationBuilder.InsertData(
+    table: "Users",
+    columns: new[] { "Id", "Name", "Email", "Password" },
+    values: new object[] { 1, "Admin", "admin@mail.com", "adminpassword" });
 ```
-- De LoginRequest heeft een Email en een Password.
-- De Email is verplicht en moet een email zijn
+- Dit is niet de juiste manier om data toe te voegen.
+- De juist manier is om de data toe te voegen in de Seed methode.
+- Dit zet ik in de dbContext file.
+``` csharp 
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<User>().HasData(
+        new User
+        {
+            Id = 2,
+            Name = "User",
+            Email = "user@example.com",
+            Password = "UserPassword"
+        });
+}
+```
+- Door nu een nieuwe migratie aan te maken gebeurt het toevoegen van de gebruiker wel op de juiste manier.
+``` csharp
+public partial class CreateDefaultUser : Migration
+{
+    /// <inheritdoc />
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.InsertData(
+            table: "Users",
+            columns: new[] { "Id", "Email", "Name", "Password" },
+            values: new object[] { 2, "user@example.com", "User", "UserPassword" });
+    }
 
-## Toevoegen TokenService
-- De TokenService maakt een token aan met de gegeven claims.
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DeleteData(
+            table: "Users",
+            keyColumn: "Id",
+            keyValue: 2);
+    }
+}
+```
+
+
+## Toevoegen Authorization builder
+- Voeg in de program file the AddAuthorizationBuilder toe.
+- Hiermee voeg kun je authorizatie services toevoegen.
+``` csharp 
+ services.AddAuthorizationBuilder()
+           .SetFallbackPolicy(new AuthorizationPolicyBuilder()
+           .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+           .RequireAuthenticatedUser()
+           .Build());
+```
+- Er wordt een AuthorizationBuilder toegevoegd.
+- Er wordt een fallback policy toegevoegd.
+- De fallback policy is de policy die gebruikt wordt als er geen andere policy is.
+- De fallback policy vereist dat de gebruiker geauthenticeerd is.
+- De fallback policy vereist dat de gebruiker geauthenticeerd is met de JwtBearerDefaults.AuthenticationScheme.
+
+- Tot slot voegen we aan de app de UseAuthorization toe.
+``` csharp
+ app.UseAuthorization();
+```
+
+## Toevoegen Entiteit Role en Seeden
+- We voegen een Role entiteit toe.
+- De entiteit Role heeft een Id, Name en een virtuele lijst van Users.
+``` csharp
+public class Role
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    public string Name { get; set; }
+
+    public virtual List<User> Users { get; set; } = new List<User>();
+}
+```
+
+- Deze virtuele lijst van Users is een navigatie property.
+- Een navigatie property is een property die een relatie heeft met een andere entiteit.
+- In dit geval heeft de Role entiteit een relatie met de User entiteit.
+
+- Door aan de User entiteit een navigatie property toe te voegen naar de Role entiteit, kunnen we de relatie tussen de User en Role entiteit vastleggen.
+- Doordat dit twee lijsten zijn die naar elkaar verwijzen, is dit een many-to-many relatie.
+- Entity Framework maakt hier automatisch een tussentabel voor aan.
+- Dit is dadelijk te zien in de migratie
+- Voeg de navigatie property toe aan de User entiteit.
+``` csharp
+public class User
+{
+	...
+    public virtual List<Role> Roles { get; set; } = new List<Role>();
+}
+```
+
+- Voeg dan de Role entiteit toe aan de dbContext.
+``` csharp
+public DbSet<Role> Roles { get; set; }
+```
+- En seed meteen de data in de dbContext.
+``` csharp
+modelBuilder.Entity<Role>().HasData(
+    new Role
+    {
+        Id = 1,
+        Name = "Admin"
+    },
+    new Role
+    {
+        Id = 2,
+        Name = "User"
+    });
+```
+
+- Als de migratie is aangemaakt, voeg je aan het migratie bestand de data toe voor de kopel tabel.
+``` csharp
+migrationBuilder.InsertData(
+    table: "RoleUser",
+    columns: new[] { "RolesId", "UsersId" },
+    values: new object[,] 
+    {
+        { 1, 1 },
+        { 2, 2 }
+    }
+    );
+```
+
+# Autoriseren!
+
+## Tokens
+- In de tokens gaan we bijhouden welke rechten een gebruiker heeft.
+- Dit doen we door de claims toe te voegen aan de token.
+- Claims zijn stukjes informatie die je aan de token kan toevoegen.
+- Aan de token voegen we de claim "roles" toe.  
 ``` csharp
 var claims = new List<Claim>
 {
-    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-    new Claim(ClaimTypes.Name, user.Name),
-    new Claim(ClaimTypes.Email, user.Email),
+    ...
+    new Claim("roles", getRoles(user))
 };
-```
-- De claims zijn de naam van de gebruiker en de rol van de gebruiker.
-- ClaimTypes zijn standaard claims die je kunt gebruiken.
-    - Het voordeel van deze standaard claims is dat je ze kunt gebruiken in de Authorize attributen en ze worden automatisch herkend.
-- De token wordt ondertekend met de HmacSha256Signature en de key die in de appsettings.json staat.
-      - Dit wordt gedaan om te voorkomen dat de key aangepast kan worden / gelezen kan worden door iemand anders.
-``` csharp
-var singingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
-```
-- De key is geheim en moet langer zijn dan 256 bits.
-- Door de key weet de gebruiker dat de token echt is en niet aangepast is.
-- De token wordt gemaakt met de JwtSecurityToken class.
-``` csharp
- var token = new JwtSecurityToken(
-            issuer: configuration["Jwt:Issuer"],
-            audience: configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddDays(7),
-            signingCredentials: singingCredentials
-        );
-```
-- De token heeft een issuer, audience, claims, expires en signingCredentials.
-- De issuer is de persoon die de token uitgeeft.
-- De audience is de persoon die de token mag gebruiken.
-- De claims zijn de gegevens die in de token staan.
-- De expires is de tijd dat de token geldig is.
-- De signingCredentials is de manier waarop de token ondertekend is.
 
-### Jwt
-- JWT staat voor JSON Web Token.
-- Het is een specifiek type bearer token.
-
- ## Program 
-
- ### AddSwaggerGen
- ``` c# 
- options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+private string getRoles(User user)
 {
-    In = ParameterLocation.Header,
-    Description = "Please insert JWT with Bearer into field",
-    Name = "Authorization",
-    Type = SecuritySchemeType.ApiKey
-});
- ```
-- Hiermee voeg je een security definition toe aan de swagger ui.
-- De naam van de security definition is Bearer.
-- Bearer token is een token die je gebruikt om te authenticeren en is vrij gemakklijk te gebruiken vergeleken met andere tokens.
+    var roles = new StringBuilder();
 
-- AddSecurtityRequirement
-``` c#
-options.AddSecurityRequirement(new OpenApiSecurityRequirement()
-{
+    if (user.Roles.Any(r => r.Name == nameof(UserRole.Admin)))
     {
-        new OpenApiSecurityScheme
-        {
-            Reference = new OpenApiReference
-            {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            }
-        },
-        Array.Empty<string>()
+        roles.Append(nameof(UserRole.Admin));
     }
-});
-```
-- Hiermee voeg je een security requirement toe aan de swagger ui.
-- Dit betekent dat je een token nodig hebt om de swagger ui te gebruiken. 
 
-### AddAuthentication
-``` c#
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+    if (user.Roles.Any(r => r.Name == nameof(UserRole.User)))
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-        ClockSkew = TimeSpan.Zero
-    };
-});
+        roles.Append(nameof(UserRole.User));
+    }
+
+    return roles.ToString();
+}
 ```
-- Hiermee voeg je authenticatie toe aan de applicatie. 
-- De JwtBearerDefaults.AuthenticationScheme is de standaard authenticatie methode.
-- De TokenValidationParameters zijn de parameters die de token moet hebben om geldig te zijn.
-- Deze komen als het goed is bekend voor van de TokenService.
+- Zo weet de Authorize attribute dadelijk welke rechten de gebruiker heeft.
+    - ``` [Authorize(Roles = nameof(UserRole.Admin))] ```
+
+## AuthController
+- Voor het login endpoint heb ik de AllowAnonymous attribute verplaatst, voor een voorbeeld endpoint dat wel geauthoriseerd is.
+- In tegenstelling tot de vorige les, toen de AllowAnonymous vooral voor de duidelijkheid was, is het nu noodzakelijk door de fallback policy in de program file.  
+``` csharp
+[AllowAnonymous]
+[HttpPost]
+public IActionResult Login([FromBody] LoginRequest request)
+{
+    var response = authService.Login(request);
+
+    if (response == null)
+    {
+        return Unauthorized();
+    }
+
+    return Ok(response);
+}
+````
+
+## User Controller en user service
+### Toekennen van rollen
+- In de user service heb ik een methode toegevoegd om een rol toe te kennen aan een gebruiker.
+- Deze methode controleert of de gebruiker al een rol heeft en voegt de rol toe aan de gebruiker.
+- Als de gebruiker al een rol heeft, wordt er een ArgumentException gegooid.
+- Als de gebruiker of de rol niet bestaat, wordt er null gereturned.
+- Als de rol is toegevoegd, wordt er een AssignRoleResponse gereturned.
+``` csharp
+public AssignRoleResponse? AssignRole(AssignRoleRequest request)
+{
+    var user = dbContext.Users
+        .Include(x => x.Roles)
+        .FirstOrDefault(x => x.Id == request.UserId);
+    var role = dbContext.Roles.Find(request.RoleId);
+
+    if (user == null || role == null)
+    {
+        return null;
+    }
+
+    if(user.Roles.Contains(role))
+    {
+        throw new ArgumentException("User already assigned to role");
+    }
+
+    user.Roles.Add(role);
+    dbContext.SaveChanges();
+
+    return new AssignRoleResponse
+    {
+        UserName = user.Name,
+        RoleName = role.Name,
+    };
+}
+```
+
+### User Controller
+- In de user controller heb ik een endpoint toegevoegd om een rol toe te kennen aan een gebruiker.
+- Deze methode roept de AssignRole methode aan in de userService.
+- Als de userService null teruggeeft, wordt er een NotFound gereturned.
+- Als de userService een AssignRoleResponse teruggeeft, wordt er een Ok gereturned.
+- Als de userService een ArgumentException gooit, wordt er een BadRequest gereturned, door het throwen van de exception in de userService.
+``` csharp
+[Authorize(Roles = nameof(UserRole.Admin) + "," + nameof(UserRole.User))]
+[HttpPatch("assign-role")]
+public IActionResult AssignRole([FromBody] AssignRoleRequest request)
+{
+    var result = userService.AssignRole(request);
+
+    if (result == null)
+    {
+        return NotFound();
+    }
+
+    return Ok(result);
+}
+```
+
+- Hier is trouwens te zien dat er een UserRole enum is toegevoegd.
+- Dit is een enum met de rollen die een gebruiker kan hebben en dus overal in de applicatie hetzelfde is.
+``` csharp
+public enum UserRole
+{
+    Admin = 1,
+    User = 2,
+}
+```
+
+### Controleren van rollen UserController
+- In de UserController heb ik voor elk endpoinit een Authorize attribute toegevoegd.
+- Hiermee wordt gecontroleerd of de gebruiker de juiste rol heeft om het endpoint te gebruiken.
+- Als de gebruiker niet de juiste rol heeft, wordt er een 403 Forbidden gereturned.
+``` csharp
+[Authorize(Roles = nameof(UserRole.User))]
+[HttpPut("{id}")]
+public IActionResult UpdateUser(int id, [FromBody] User user)
+{
+    throw new NotImplementedException();
+}
+```
+- Als er geen rol is toegevoegd aan de gebruiker, wordt er een 401 Unauthorized gereturned.
+    - Dit komt weer door de fallback policy in de program file.
+- Als het endpoint alleen ``` [Authorize] ``` heeft, wordt er gecontroleerd of de gebruiker **geauthenticeerd** is.
+- ALs het endpoint ``` [AllowAnonymous] ``` heeft, wordt er niet gecontroleerd of de gebruiker **geauthenticeerd** is.
+- ALs het endpoint geen Authorize attribute heeft, wordt er door de fallback policy gecontroleerd of de gebruiker **geauthenticeerd** is.
+- Door de rollen in de authorize attribute te zetten, wordt er gecontroleerd of de gebruiker de juiste rol heeft.
+- Als je meerdere rollen wilt toestaan, kun je deze scheiden met een komma.
+``` csharp
+[Authorize(Roles = nameof(UserRole.Admin) + "," + nameof(UserRole.User))]
+```
 
 
+## shared folder
+- Tot slot heb ik de shared folder opgeruimd en folders aangemaakt om alles overzichtelijk te houden.
+- Verder heb ik voor de niewe requests en responses nieuwe files aangemaakt.
 
- ## Migration admin user
- Ik wilde nog een admin user toevoegen, maar ik had al een migratie gemaakt. 
- - Database Updaten zodat de migratie er niet meer op staat
-    - ```Update-Database 0```
- - Pas de Migratie aan en voeg de admin user toe
-    ``` migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "Name", "Email", "Password" },
-                values: new object[] { 1, "Admin", "admin@mail.com", "adminpassword" });
-    ```
- - Voeg de migratie weer toe ``` Update-Database```
-
- 
-
- ## denk aan
- ZET bearer voor de token in de swagger ui
+## Demo 
+TODO
+- stappen voor demo 
+- powerpoint presentatie
