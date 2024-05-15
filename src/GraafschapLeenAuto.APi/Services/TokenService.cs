@@ -1,19 +1,25 @@
 ﻿namespace GraafschapLeenAuto.Api.Services;
 
+using GraafschapLeenAuto.Api.Context;
 using GraafschapLeenAuto.Api.Entities;
 using GraafschapLeenAuto.Shared.Enums;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
 
-public class TokenService(IConfiguration configuration)
+public class TokenService(IConfiguration configuration, LeenAutoDbContext dbContext)
 {
+    private readonly LeenAutoDbContext dbContext = dbContext;
     private readonly SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
 
     public string CreateToken(User user)
     {
+        var userWithRoles = dbContext.Users
+            .Include(u => u.Roles)
+            .FirstOrDefault(u => u.Id == user.Id);
 
         var claims = new List<Claim>
         {

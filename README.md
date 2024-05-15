@@ -149,7 +149,12 @@ migrationBuilder.InsertData(
 - Dit doen we door de claims toe te voegen aan de token.
 - Claims zijn stukjes informatie die je aan de token kan toevoegen.
 - Aan de token voegen we de claim "roles" toe.  
+- Denk eraan, de user die binnenkomt bevat nog geen rollen, die moet je ophalen.
 ``` csharp
+ var userWithRoles = dbContext.Users
+    .Include(u => u.Roles)
+    .FirstOrDefault(u => u.Id == user.Id);
+
 var claims = new List<Claim>
 {
     ...
@@ -292,6 +297,24 @@ public IActionResult UpdateUser(int id, [FromBody] User user)
 - Verder heb ik voor de niewe requests en responses nieuwe files aangemaakt.
 
 ## Demo 
-TODO
-- stappen voor demo 
-- powerpoint presentatie
+
+### AuthController
+- Het login endpoint is door de AllowAnonymous attribute nog steeds te gebruiken zonder ingelogd te zijn.
+- Voor de secret endpoint moet je admin zijn. 
+    - Als je inlogt zonder in te loggen krijg je een 401 Unauthorized.
+    - Als je inlogt met een user account krijg je een 403 Forbidden.
+    - Als je inlogt met een admin account krijg je een 200 OK.
+
+- Als je het token ophaalt, kun je deze in jwt.io zetten om te zien dat de claim roles is toegevoegd.
+
+
+### UserController
+- De getUser endpoint is door de Authorize attribute alleen te gebruiken als je ingelogd bent.
+- Je rol maakt niet uit.
+- Hetzelfde geldt voor de GetUser, dit komt door de fallback policy. (dus eigenlijk staat het authorize attribute er wel)
+- Voor de UpdateUser moet je User zijn.
+- Voor de AssignRole moet je Admin of User zijn.
+
+### Note
+In de laatste git change is te zien dat ik in de authcontroller de Roles check heb aangepast.
+Er stond daar een string Admin, maar dit moet de enum UserRole.Admin zijn.

@@ -7,14 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GraafschapLeenAuto.Api.Services
 {
-    public class UserService
+    public class UserService(LeenAutoDbContext dbContext)
     {
-        private readonly LeenAutoDbContext dbContext;
-
-        public UserService(LeenAutoDbContext dbContext)
-        {
-            this.dbContext = dbContext;
-        }
+        private readonly LeenAutoDbContext dbContext = dbContext;
 
         public IEnumerable<UserDto> GetUsers()
         {

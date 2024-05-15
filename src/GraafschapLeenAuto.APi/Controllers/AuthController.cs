@@ -26,7 +26,7 @@ public class AuthController(AuthService authService) : ControllerBase
     }
 
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
     [HttpGet("secret")]
     public IActionResult Secret()
     {
