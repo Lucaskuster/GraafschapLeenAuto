@@ -1,320 +1,161 @@
 # GraafschapLeenAuto
 
-## Authenticatie en autorisatie
-- In deze les gaan we het hebben over authorisatie.
-- Autorisatie is het proces waarbij je controleert of iemand toegang heeft tot bepaalde resources.
-- In de vorige les hebben we gekeken naar authenticatie.
-- Authenticatie is het proces waarbij je controleert of iemand is wie hij zegt dat hij is.
- 
-## Migratie fout vorige les
-- In de vorige les hebben we een fout gemaakt bij het toevoegen van de migratie.
-- In de migratie hebben we gelijk aangemaakt en met de migrationBuilder de data toegevoegd.
-``` csharp 
-migrationBuilder.InsertData(
-    table: "Users",
-    columns: new[] { "Id", "Name", "Email", "Password" },
-    values: new object[] { 1, "Admin", "admin@mail.com", "adminpassword" });
-```
-- Dit is niet de juiste manier om data toe te voegen.
-- De juist manier is om de data toe te voegen in de Seed methode.
-- Dit zet ik in de dbContext file.
-``` csharp 
-protected override void OnModelCreating(ModelBuilder modelBuilder)
+## Aanmaken Blazor project
+
+- Voeg in de folder van je andere projecten een nieuw project toe
+- Kies voor Blazor WebAssembly Standalone App
+- Geef hem een correcte naam, in deze solution is dat GraafschapLeenAuto.Blazor
+
+## Blazor project aanpassen
+- Blazor maakt meteen een hele hoop bestanden aan, daar lopen we even doorheen
+- wwwroot 
+  - Deze map bevat de statische bestanden van de applicatie
+  - Denk aan css, images, js, etc.
+- Layout
+    - Hierin staat de layout van de pagina verdeelt in de body en de nav
+    - Hierin staat ook de routing van de pagina's
+- pages 
+    - Hierin staan de pagina's van de applicatie
+    - Waarna geroute wordt vanuit de layout
+    - De pagina's Counter en Weather kunnen weg
+    - Voor lesdoeleinden laat ik de weather pagina staan
+- Dan heb je nog de _Imports.razor, App.razor en Program.cs
+	- _Imports.razor
+		- Hierin staan de imports die gelden voor de ghele applicatie
+	- App.razor
+		- De hoofdcomponent van de app met HTML-`<head>` opmaak, de Routescomponent en de Blazor-`<script>` tag. De rootcomponent is de eerste component die de app laadt.
+	- Program.cs
+		- Hierin staat de main functie van de applicatie
+
+## Herschrijf de Homepagina
+- Voor dit voorbeeld gaan we de homepagina herschrijven
+``` razor
+@page "/"
+
+@using GraafschapLeenAuto.Shared.Dtos;
+
+<PageTitle>Login</PageTitle>
+
+@if (Users != null)
 {
-    modelBuilder.Entity<User>().HasData(
-        new User
-        {
-            Id = 2,
-            Name = "User",
-            Email = "user@example.com",
-            Password = "UserPassword"
-        });
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Email</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Users)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Name</td>
+                    <td>@user.Email</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
-```
-- Door nu een nieuwe migratie aan te maken gebeurt het toevoegen van de gebruiker wel op de juiste manier.
-``` csharp
-public partial class CreateDefaultUser : Migration
-{
-    /// <inheritdoc />
-    protected override void Up(MigrationBuilder migrationBuilder)
-    {
-        migrationBuilder.InsertData(
-            table: "Users",
-            columns: new[] { "Id", "Email", "Name", "Password" },
-            values: new object[] { 2, "user@example.com", "User", "UserPassword" });
-    }
 
-    /// <inheritdoc />
-    protected override void Down(MigrationBuilder migrationBuilder)
+@code{
+    public UserDto[] Users { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-        migrationBuilder.DeleteData(
-            table: "Users",
-            keyColumn: "Id",
-            keyValue: 2);
     }
 }
+
 ```
 
+- In de code hierboven wordt de UserHttpClient geïnjecteerd in de pagina (die we dadelijk gaan aanmaken)
+- De UserHttpClient is een HttpClient die we zelf hebben aangemaakt
+- De UserHttpClient haalt de data op van de API
+- De html in de pagina toont de data die is opgehaald van de API
+- Verder is de code in de pagina een combinatie van C# en HTML
 
-## Toevoegen Authorization builder
-- Voeg in de program file the AddAuthorizationBuilder toe.
-- Hiermee voeg kun je authorizatie services toevoegen.
-``` csharp 
- services.AddAuthorizationBuilder()
-           .SetFallbackPolicy(new AuthorizationPolicyBuilder()
-           .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
-           .RequireAuthenticatedUser()
-           .Build());
-```
-- Er wordt een AuthorizationBuilder toegevoegd.
-- Er wordt een fallback policy toegevoegd.
-- De fallback policy is de policy die gebruikt wordt als er geen andere policy is.
-- De fallback policy vereist dat de gebruiker geauthenticeerd is.
-- De fallback policy vereist dat de gebruiker geauthenticeerd is met de JwtBearerDefaults.AuthenticationScheme.
-
-- Tot slot voegen we aan de app de UseAuthorization toe.
-``` csharp
- app.UseAuthorization();
-```
-
-## Toevoegen Entiteit Role en Seeden
-- We voegen een Role entiteit toe.
-- De entiteit Role heeft een Id, Name en een virtuele lijst van Users.
-``` csharp
-public class Role
+## Add httpClient
+- Voeg een Clients folder toe aan de Shared folder 
+- Hier gaan we de UserHttpClient aanmaken, deze kan natuurlijk door de gehele solution gebruikt worden.
+- Eerst installeer Microsoft.Extensions.Http met nuget, deze is nodig voor de HttpClientFactory
+- We gebruiken een IHttpClientFactory om de UserHttpClient te maken.
+- We geven de client de base url van de API mee, deze is te vinden in de launchSettings.json van de API. LET OP dit is de url van de API, niet van de Blazor app.
+- Let ook op, deze url is hardcoded, dit is niet de beste manier om dit te doen, maar voor nu is het prima.
+- Zorg er ook voor dat je de url van de api pakt en niet die van de swagger ui
+``` c#
+public UserHttpClient(IHttpClientFactory httpClientFactory)
 {
-    [Key]
-    public int Id { get; set; }
+    client = httpClientFactory.CreateClient();
+    client.BaseAddress = new Uri("http://localhost:5236/User");
 
-    [Required]
-    public string Name { get; set; }
-
-    public virtual List<User> Users { get; set; } = new List<User>();
-}
-```
-
-- Deze virtuele lijst van Users is een navigatie property.
-- Een navigatie property is een property die een relatie heeft met een andere entiteit.
-- In dit geval heeft de Role entiteit een relatie met de User entiteit.
-
-- Door aan de User entiteit een navigatie property toe te voegen naar de Role entiteit, kunnen we de relatie tussen de User en Role entiteit vastleggen.
-- Doordat dit twee lijsten zijn die naar elkaar verwijzen, is dit een many-to-many relatie.
-- Entity Framework maakt hier automatisch een tussentabel voor aan.
-- Dit is dadelijk te zien in de migratie
-- Voeg de navigatie property toe aan de User entiteit.
-``` csharp
-public class User
-{
-	...
-    public virtual List<Role> Roles { get; set; } = new List<Role>();
-}
-```
-
-- Voeg dan de Role entiteit toe aan de dbContext.
-``` csharp
-public DbSet<Role> Roles { get; set; }
-```
-- En seed meteen de data in de dbContext.
-``` csharp
-modelBuilder.Entity<Role>().HasData(
-    new Role
+    jsonOptions = new JsonSerializerOptions
     {
-        Id = 1,
-        Name = "Admin"
-    },
-    new Role
-    {
-        Id = 2,
-        Name = "User"
-    });
-```
-
-- Als de migratie is aangemaakt, voeg je aan het migratie bestand de data toe voor de kopel tabel.
-``` csharp
-migrationBuilder.InsertData(
-    table: "RoleUser",
-    columns: new[] { "RolesId", "UsersId" },
-    values: new object[,] 
-    {
-        { 1, 1 },
-        { 2, 2 }
-    }
-    );
-```
-
-# Autoriseren!
-
-## Tokens
-- In de tokens gaan we bijhouden welke rechten een gebruiker heeft.
-- Dit doen we door de claims toe te voegen aan de token.
-- Claims zijn stukjes informatie die je aan de token kan toevoegen.
-- Aan de token voegen we de claim "roles" toe.  
-- Denk eraan, de user die binnenkomt bevat nog geen rollen, die moet je ophalen.
-``` csharp
- var userWithRoles = dbContext.Users
-    .Include(u => u.Roles)
-    .FirstOrDefault(u => u.Id == user.Id);
-
-var claims = new List<Claim>
-{
-    ...
-    new Claim("roles", getRoles(user))
-};
-
-private string getRoles(User user)
-{
-    var roles = new StringBuilder();
-
-    if (user.Roles.Any(r => r.Name == nameof(UserRole.Admin)))
-    {
-        roles.Append(nameof(UserRole.Admin));
-    }
-
-    if (user.Roles.Any(r => r.Name == nameof(UserRole.User)))
-    {
-        roles.Append(nameof(UserRole.User));
-    }
-
-    return roles.ToString();
-}
-```
-- Zo weet de Authorize attribute dadelijk welke rechten de gebruiker heeft.
-    - ``` [Authorize(Roles = nameof(UserRole.Admin))] ```
-
-## AuthController
-- Voor het login endpoint heb ik de AllowAnonymous attribute verplaatst, voor een voorbeeld endpoint dat wel geauthoriseerd is.
-- In tegenstelling tot de vorige les, toen de AllowAnonymous vooral voor de duidelijkheid was, is het nu noodzakelijk door de fallback policy in de program file.  
-``` csharp
-[AllowAnonymous]
-[HttpPost]
-public IActionResult Login([FromBody] LoginRequest request)
-{
-    var response = authService.Login(request);
-
-    if (response == null)
-    {
-        return Unauthorized();
-    }
-
-    return Ok(response);
-}
-````
-
-## User Controller en user service
-### Toekennen van rollen
-- In de user service heb ik een methode toegevoegd om een rol toe te kennen aan een gebruiker.
-- Deze methode controleert of de gebruiker al een rol heeft en voegt de rol toe aan de gebruiker.
-- Als de gebruiker al een rol heeft, wordt er een ArgumentException gegooid.
-- Als de gebruiker of de rol niet bestaat, wordt er null gereturned.
-- Als de rol is toegevoegd, wordt er een AssignRoleResponse gereturned.
-``` csharp
-public AssignRoleResponse? AssignRole(AssignRoleRequest request)
-{
-    var user = dbContext.Users
-        .Include(x => x.Roles)
-        .FirstOrDefault(x => x.Id == request.UserId);
-    var role = dbContext.Roles.Find(request.RoleId);
-
-    if (user == null || role == null)
-    {
-        return null;
-    }
-
-    if(user.Roles.Contains(role))
-    {
-        throw new ArgumentException("User already assigned to role");
-    }
-
-    user.Roles.Add(role);
-    dbContext.SaveChanges();
-
-    return new AssignRoleResponse
-    {
-        UserName = user.Name,
-        RoleName = role.Name,
+        PropertyNameCaseInsensitive = true
     };
 }
 ```
-
-### User Controller
-- In de user controller heb ik een endpoint toegevoegd om een rol toe te kennen aan een gebruiker.
-- Deze methode roept de AssignRole methode aan in de userService.
-- Als de userService null teruggeeft, wordt er een NotFound gereturned.
-- Als de userService een AssignRoleResponse teruggeeft, wordt er een Ok gereturned.
-- Als de userService een ArgumentException gooit, wordt er een BadRequest gereturned, door het throwen van de exception in de userService.
-``` csharp
-[Authorize(Roles = nameof(UserRole.Admin) + "," + nameof(UserRole.User))]
-[HttpPatch("assign-role")]
-public IActionResult AssignRole([FromBody] AssignRoleRequest request)
+- Met de json options kunnen we de data die we ophalen van de API omzetten naar een object
+- Het ophalen en omzetten gebeurt in de GetUsers methode
+``` c#
+public async Task<UserDto[]> GetUsers()
 {
-    var result = userService.AssignRole(request);
+    var response = await client.GetAsync(string.Empty);
 
-    if (result == null)
+    if(!response.IsSuccessStatusCode)
     {
-        return NotFound();
+        return [];
     }
 
-    return Ok(result);
+    var content = await response.Content.ReadAsStringAsync();
+    var users = JsonSerializer.Deserialize<UserDto[]>(content, jsonOptions);
+
+    if(users is null)
+    {
+        return [];
+    }
+
+    return users;
 }
 ```
+- Hier voeg je alle methodes toe die je nodig hebt voor calls naar de UserController van de API
 
-- Hier is trouwens te zien dat er een UserRole enum is toegevoegd.
-- Dit is een enum met de rollen die een gebruiker kan hebben en dus overal in de applicatie hetzelfde is.
-``` csharp
-public enum UserRole
+### gebruiken van httpClient
+- Installeer Microsoft.Extensions.Http met nuget in het Blazor project
+- Maak een project reference naar het shared project van de solution
+- Voeg de volgende code toe aan de program file van je blazor project
+``` c# 
+builder.Services.AddHttpClient(); 
+builder.Services.AddScoped<UserHttpClient>();
+```
+
+- Voeg in de Home.razor pagina de volgende code toe
+``` c#
+@inject UserHttpClient UserHttpClient;
+
+@using GraafschapLeenAuto.Shared.Clients;
+```
+- En zet in de OnInitializedAsync methode de volgende code
+``` c#
+Users = await UserHttpClient.GetUsers();
+```
+
+## CORS 
+- In de API moet je CORS aanzetten om de Blazor app toegang te geven tot de API
+``` c#
+ services.AddCors(options =>
 {
-    Admin = 1,
-    User = 2,
-}
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
+app.UseCors();
 ```
 
-### Controleren van rollen UserController
-- In de UserController heb ik voor elk endpoinit een Authorize attribute toegevoegd.
-- Hiermee wordt gecontroleerd of de gebruiker de juiste rol heeft om het endpoint te gebruiken.
-- Als de gebruiker niet de juiste rol heeft, wordt er een 403 Forbidden gereturned.
-``` csharp
-[Authorize(Roles = nameof(UserRole.User))]
-[HttpPut("{id}")]
-public IActionResult UpdateUser(int id, [FromBody] User user)
-{
-    throw new NotImplementedException();
-}
-```
-- Als er geen rol is toegevoegd aan de gebruiker, wordt er een 401 Unauthorized gereturned.
-    - Dit komt weer door de fallback policy in de program file.
-- Als het endpoint alleen ``` [Authorize] ``` heeft, wordt er gecontroleerd of de gebruiker **geauthenticeerd** is.
-- ALs het endpoint ``` [AllowAnonymous] ``` heeft, wordt er niet gecontroleerd of de gebruiker **geauthenticeerd** is.
-- ALs het endpoint geen Authorize attribute heeft, wordt er door de fallback policy gecontroleerd of de gebruiker **geauthenticeerd** is.
-- Door de rollen in de authorize attribute te zetten, wordt er gecontroleerd of de gebruiker de juiste rol heeft.
-- Als je meerdere rollen wilt toestaan, kun je deze scheiden met een komma.
-``` csharp
-[Authorize(Roles = nameof(UserRole.Admin) + "," + nameof(UserRole.User))]
-```
-
-
-## shared folder
-- Tot slot heb ik de shared folder opgeruimd en folders aangemaakt om alles overzichtelijk te houden.
-- Verder heb ik voor de niewe requests en responses nieuwe files aangemaakt.
-
-## Demo 
-
-### AuthController
-- Het login endpoint is door de AllowAnonymous attribute nog steeds te gebruiken zonder ingelogd te zijn.
-- Voor de secret endpoint moet je admin zijn. 
-    - Als je inlogt zonder in te loggen krijg je een 401 Unauthorized.
-    - Als je inlogt met een user account krijg je een 403 Forbidden.
-    - Als je inlogt met een admin account krijg je een 200 OK.
-
-- Als je het token ophaalt, kun je deze in jwt.io zetten om te zien dat de claim roles is toegevoegd.
-
-
-### UserController
-- De getUser endpoint is door de Authorize attribute alleen te gebruiken als je ingelogd bent.
-- Je rol maakt niet uit.
-- Hetzelfde geldt voor de GetUser, dit komt door de fallback policy. (dus eigenlijk staat het authorize attribute er wel)
-- Voor de UpdateUser moet je User zijn.
-- Voor de AssignRole moet je Admin of User zijn.
-
-### Note
-In de laatste git change is te zien dat ik in de authcontroller de Roles check heb aangepast.
-Er stond daar een string Admin, maar dit moet de enum UserRole.Admin zijn.
+## Zonder authentication and authorization
+- Voeg AllowAnonymous toe aan de getUsers methode in de UserController.
+- We gebruiken namelijk nog geen authentication en authorization

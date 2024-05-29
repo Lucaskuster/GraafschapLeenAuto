@@ -80,7 +80,19 @@ public class Program
            .RequireAuthenticatedUser()
            .Build());
 
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            });
+        });
+
         var app = builder.Build();
+
+        app.UseCors();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
