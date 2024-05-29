@@ -159,3 +159,56 @@ app.UseCors();
 ## Zonder authentication and authorization
 - Voeg AllowAnonymous toe aan de getUsers methode in de UserController.
 - We gebruiken namelijk nog geen authentication en authorization
+
+
+## Components
+- Components zijn herbruikbare stukken code die je in je pagina's kan gebruiken
+- Maak een nieuwe folder Components aan in het blazor project
+- Maak een nieuw component aan, in dit voorbeeld maak ik een pageHeader.
+``` razor
+ @switch (Size)
+{
+    case Sizes.H1:
+        <h1>@ChildContent</h1>
+        break;
+    case Sizes.H2:
+        <h2>@ChildContent</h2>
+        break;
+    case Sizes.H3:
+        <h3>@ChildContent</h3>
+        break;
+    default:
+        @ChildContent
+        break;
+}
+
+<hr />
+
+@code {
+    [Parameter]
+    public Sizes? Size { get; set; }
+    
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    public enum Sizes
+    {
+        H3,
+        H2,
+        H1
+    }
+}
+
+```
+
+- De parameters van een component worden aangegeven met de `[Parameter]` tag
+- De RenderFragment is een stukje HTML dat je mee kan geven aan het component
+- Het component kan je gebruiken in een pagina als volgt
+``` razor
+<PageHeader Size="PageHeader.Sizes.H2">Users</PageHeader>
+```
+- Door het renderFragment kun je zelf ook nog HTML toevoegen aan het component
+``` razor
+<PageHeader><h5>Users</h5></PageHeader>
+```

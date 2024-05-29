@@ -1,0 +1,33 @@
+﻿ @switch (Size)
+{
+    case Sizes.H1:
+        <h1>@ChildContent</h1>
+        break;
+    case Sizes.H2:
+        <h2>@ChildContent</h2>
+        break;
+    case Sizes.H3:
+        <h3>@ChildContent</h3>
+        break;
+    default:
+        @ChildContent
+        break;
+}
+
+<hr />
+
+@code {
+    [Parameter]
+    public Sizes? Size { get; set; }
+    
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    public enum Sizes
+    {
+        H3,
+        H2,
+        H1
+    }
+}
