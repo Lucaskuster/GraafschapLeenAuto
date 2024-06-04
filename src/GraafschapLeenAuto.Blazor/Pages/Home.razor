@@ -1,9 +1,12 @@
 ﻿@page "/"
 @inject UserHttpClient UserHttpClient;
+@attribute [Authorize]
 
 @using GraafschapLeenAuto.Shared.Dtos;
 @using GraafschapLeenAuto.Shared.Clients;
-@using GraafschapLeenAuto.Blazor.Components
+@using GraafschapLeenAuto.Blazor.Components;
+@using Microsoft.AspNetCore.Authorization
+
 
 <PageTitle>Home</PageTitle>
 <PageHeader><h5>Users</h5></PageHeader>

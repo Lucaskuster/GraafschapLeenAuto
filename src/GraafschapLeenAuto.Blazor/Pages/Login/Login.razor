@@ -1,0 +1,51 @@
+﻿@page "/login"
+@using GraafschapLeenAuto.Blazor.Components
+@using GraafschapLeenAuto.Shared.Clients;
+@using GraafschapLeenAuto.Blazor.Services;
+@using GraafschapLeenAuto.Shared.Requests;
+
+@inject AuthHttpClient AuthHttpClient;
+@inject LocalStorageService LocalStorageService;
+@inject GraafschapLeenAutoAuthenticationStateProvider AuthenticationStateProvider;
+@inject NavigationManager NavigationManager;
+
+<div class="d-flex align-items-center login-alignment">
+    <div class="form-login w-100 h-100">
+        <EditForm Model="Request" OnSubmit="LoginAsync">
+            <PageHeader Size="PageHeader.Sizes.H2">Please Login!</PageHeader>
+
+            <div class="form-floating">
+                <InputText id="email" class="form-control" @bind-Value="Request.Email" placeholder="Email" />
+                <label for="email">Email address</label>
+            </div>
+
+            <div class="form-floating">
+                <InputText id="password" class="form-control" @bind-Value="Request.Password" placeholder="Password" type="password" />
+                <label for="password">Password</label>
+            </div>
+
+            <br />
+
+            <button class="btn btn-primary w-100 py-2" type="submit">Login</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly LoginRequest Request = new();
+
+    private async Task LoginAsync()
+    {
+        var response = await AuthHttpClient.Login(Request);
+
+        if(response is null)
+        {
+            return;   
+        }
+
+        await LocalStorageService.SetItemAsync("token", response.Token);
+        await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        NavigationManager.NavigateTo("/");
+    }
+}

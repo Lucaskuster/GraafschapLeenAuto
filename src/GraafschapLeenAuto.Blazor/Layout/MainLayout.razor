@@ -1,4 +1,13 @@
-﻿@inherits LayoutComponentBase
+﻿﻿@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+
+@using GraafschapLeenAuto.Shared.Interfaces
+@using GraafschapLeenAuto.Blazor.Services
+
+@inject GraafschapLeenAutoAuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject ICurrentUserContext Context
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -6,7 +15,11 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized>
+                    Welcome! <a href="#" @onclick=(Logout) class="btn btn-primary">Logout</a>
+                </Authorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
@@ -14,3 +27,12 @@
         </article>
     </main>
 </div>
+
+@code{
+
+    public async Task Logout()
+    {
+        await AuthenticationStateProvider.Logout();
+        NavigationManager.NavigateTo("/login");
+    }
+}

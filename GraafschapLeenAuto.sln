@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{76732448-000
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraafschapLeenAuto.Shared", "src\GraafschapLeenAuto.Shared\GraafschapLeenAuto.Shared.csproj", "{C4F1F84B-8121-4DB1-A537-76A3E1802AF3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraafschapLeenAuto.Blazor", "src\GraafschapLeenAuto.Blazor\GraafschapLeenAuto.Blazor.csproj", "{0BAA0400-1378-49CF-B376-EFDC8DE174F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraafschapLeenAuto.Blazor", "src\GraafschapLeenAuto.Blazor\GraafschapLeenAuto.Blazor.csproj", "{0BAA0400-1378-49CF-B376-EFDC8DE174F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
