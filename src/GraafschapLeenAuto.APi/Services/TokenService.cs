@@ -2,6 +2,7 @@
 
 using GraafschapLeenAuto.Api.Context;
 using GraafschapLeenAuto.Api.Entities;
+using GraafschapLeenAuto.Shared.Constants;
 using GraafschapLeenAuto.Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -23,10 +24,10 @@ public class TokenService(IConfiguration configuration, LeenAutoDbContext dbCont
 
         var claims = new List<Claim>
         {
-            new Claim("id", user.Id.ToString()),
-            new Claim("name", user.Name),
-            new Claim(nameof(User.Email).ToLower(), user.Email),
-            new Claim("roles", getRoles(user))
+            new Claim(Claims.Id, user.Id.ToString()),
+            new Claim(Claims.Name, user.Name),
+            new Claim(Claims.Email, user.Email),
+            new Claim(Claims.Role, getRoles(user))
         };
 
         var singingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);

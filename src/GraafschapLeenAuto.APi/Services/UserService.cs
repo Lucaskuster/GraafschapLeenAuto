@@ -1,13 +1,15 @@
 ﻿using GraafschapLeenAuto.Api.Context;
 using GraafschapLeenAuto.Api.Entities;
 using GraafschapLeenAuto.Shared.Dtos;
+using GraafschapLeenAuto.Shared.Enums;
+using GraafschapLeenAuto.Shared.Interfaces;
 using GraafschapLeenAuto.Shared.Requests;
 using GraafschapLeenAuto.Shared.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace GraafschapLeenAuto.Api.Services
 {
-    public class UserService(LeenAutoDbContext dbContext)
+    public class UserService(LeenAutoDbContext dbContext, ICurrentUserContext userContext)
     {
         private readonly LeenAutoDbContext dbContext = dbContext;
 
@@ -23,6 +25,11 @@ namespace GraafschapLeenAuto.Api.Services
 
         public UserDto? GetUserById(int id)
         {
+            if (userContext.IsInRole(nameof(UserRole.User)))
+            {
+                id = userContext.User.Id;
+            }
+
             var user = dbContext.Users.Find(id);
 
             if (user == null)

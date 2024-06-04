@@ -2,6 +2,7 @@ namespace GraafschapLeenAuto.APi;
 
 using GraafschapLeenAuto.Api.Context;
 using GraafschapLeenAuto.Api.Services;
+using GraafschapLeenAuto.Shared.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,7 @@ public class Program
         services.AddTransient<UserService>();
         services.AddTransient<AuthService>();
         services.AddTransient<TokenService>();
+        services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
         // Add database context
         services.AddDbContext<LeenAutoDbContext>(options =>
@@ -79,6 +81,8 @@ public class Program
            .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
            .RequireAuthenticatedUser()
            .Build());
+
+        services.AddHttpContextAccessor();
 
         services.AddCors(options =>
         {
